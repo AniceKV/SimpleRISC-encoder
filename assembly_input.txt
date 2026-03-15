@@ -1,0 +1,11 @@
+.main
+mov r1, 5
+mov r2, 10
+mov r3, 20
+call .add_nums
+st r3, 0[r14]
+ret
+
+.add_nums
+add r3, r1, r2
+ret
