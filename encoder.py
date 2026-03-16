@@ -45,10 +45,10 @@ def get_encoding_type(opcode):
         return 0
     elif opcode in ("call", "b", "beq", "bgt"):
         return 1
-    elif opcode in ("add", "sub", "mul", "div", "mod", "and", "or", "lsl", "lsr", "asr"):
-        return 3
-    else:
+    elif opcode in ("cmp", "mov", "not", "ld", "st"):
         return 2
+    else:
+        return 3
 
 
 def set_Imm_flag(instruction):
@@ -93,13 +93,22 @@ def to_2s_complement(value, bits):
         value = (1 << bits) + value
     return format(value, f'0{bits}b')
 
-
+def parse_modifier(opcode_token):
+    if opcode_token.endswith('hu'):
+        return opcode_token[:-2], '11'   # strip 'hu', modifier = 11
+    elif opcode_token.endswith('h'):
+        return opcode_token[:-1], '10'   # strip 'h', modifier = 10
+    elif opcode_token.endswith('u'):
+        return opcode_token[:-1], '01'   # strip 'u', modifier = 01
+    else:
+        return opcode_token, '00'        # no modifier
 # ---------------------------------------------------------------------------
 # Operand-count guard
 # ---------------------------------------------------------------------------
 
 def _check_operand_count(instruction_tokens):
-    op = instruction_tokens[0].lower()
+    raw_op = instruction_tokens[0].lower()
+    op, _ = parse_modifier(raw_op)
     expected = _expected_token_counts.get(op)
     if expected is None:
         return  # unknown opcode is caught earlier
@@ -126,7 +135,7 @@ def encoding_type_0(instruction_tokens, current_location=None, subroutine_map=No
 
 def encoding_type_1(instruction_tokens, current_location, subroutine_map):
     _check_operand_count(instruction_tokens)
-    op = instruction_tokens[0].lower()
+    op, _ = parse_modifier(instruction_tokens[0].lower())
     label = instruction_tokens[1].lower()
 
     # Undefined label
@@ -156,10 +165,12 @@ def encoding_type_1(instruction_tokens, current_location, subroutine_map):
 def encoding_type_2(instruction_tokens, current_location=None, subroutine_map=None):
     _check_operand_count(instruction_tokens)
     code = ''
-    op = instruction_tokens[0].lower()
+    op, modifier = parse_modifier(instruction_tokens[0].lower())
 
     if op == 'cmp':
         code += opcode_map[op]
+        code += '_'
+        code += modifier
         code += '_'
         code += str(set_Imm_flag(instruction_tokens[2]))
         code += '_'
@@ -170,12 +181,13 @@ def encoding_type_2(instruction_tokens, current_location=None, subroutine_map=No
         if set_Imm_flag(instruction_tokens[2]) == 0:
             code += register_text_to_encoding(instruction_tokens[2])
         else:
-            code += '00_'
             code += to_16bit_binary(instruction_tokens[2])
 
     elif op in ('mov', 'not'):
         code += opcode_map[op]
         code += '_'
+        code += modifier
+        code += '_'
         code += str(set_Imm_flag(instruction_tokens[2]))
         code += '_'
         code += register_text_to_encoding(instruction_tokens[1])
@@ -185,10 +197,10 @@ def encoding_type_2(instruction_tokens, current_location=None, subroutine_map=No
         if set_Imm_flag(instruction_tokens[2]) == 0:
             code += register_text_to_encoding(instruction_tokens[2])
         else:
-            code += '00_'
             code += to_16bit_binary(instruction_tokens[2])
 
     elif op in ('st', 'ld'):
+        _, modifier = parse_modifier(instruction_tokens[0].lower())
         raw_operand = instruction_tokens[2]
 
         # Validate ld/st operand format: offset[base_reg]
@@ -229,8 +241,12 @@ def encoding_type_2(instruction_tokens, current_location=None, subroutine_map=No
 
 def encoding_type_3(instruction_tokens, current_location=None, subroutine_map=None):
     _check_operand_count(instruction_tokens)
+    op, modifier = parse_modifier(instruction_tokens[0].lower())
+
     code = ''
-    code += opcode_map[instruction_tokens[0].lower()]
+    code += opcode_map[op]
+    code += '_'
+    code += modifier
     code += '_'
     code += str(set_Imm_flag(instruction_tokens[3]))
     code += '_'
@@ -241,7 +257,6 @@ def encoding_type_3(instruction_tokens, current_location=None, subroutine_map=No
     if set_Imm_flag(instruction_tokens[3]) == 0:
         code += register_text_to_encoding(instruction_tokens[3])
     else:
-        code += '00_'
         code += to_16bit_binary(instruction_tokens[3])
     code = pad_to_32_bits(code)
     return code
@@ -292,11 +307,12 @@ def encode(line, subroutine_map={}):
     _validate_delimiters(instruction)
 
     instruction_tokens = re.split(r'[,\s]+', instruction.strip())
-    op = instruction_tokens[0].lower()
+    raw_op = instruction_tokens[0].lower()
+    op, _ = parse_modifier(raw_op)   # strip modifier for opcode lookup
 
     # Invalid opcode
     if op not in opcode_map:
-        raise AssemblerError(f"Invalid opcode '{op}'")
+        raise AssemblerError(f"Invalid opcode '{raw_op}'")
 
     encoding_type = get_encoding_type(op)
     code = encoding_functions[encoding_type](instruction_tokens, current_location, subroutine_map)
