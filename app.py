@@ -36,7 +36,7 @@ if st.button("Assemble"):
 
             for line in program:
                 stripped = line.strip()
-                if stripped == '' or stripped[0] == '.':
+                if stripped == '' or stripped[0] == '.' or stripped[0] == '/':
                     continue
                 parts = line.split(None, 1)
                 encoding = encoder.encode(line, subroutine_map).replace("_", "")
