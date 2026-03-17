@@ -26,6 +26,8 @@ with open('output.txt','w') as f:
             continue
         elif stripped[0] == '.':
             continue
+        elif stripped[0] == '/':
+            continue
         else:
             instruction_line_number += 1
             try:

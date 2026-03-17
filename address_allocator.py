@@ -23,6 +23,10 @@ def allocate_addresses(input_path, output_path, start_address=0x0000):
             output_lines.append(stripped)
             continue
 
+        if stripped.startswith('/'):
+            output_lines.append(stripped)
+            continue
+
         # Instruction — prepend the current address, then advance by 4
         address_str = f"0x{current_address:04X}"
         output_lines.append(f"{address_str}  {stripped}")
