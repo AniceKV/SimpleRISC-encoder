@@ -1,1 +1,2 @@
-0x0000  add r1,r2,r3
+0x0000  mov r1,r2
+0x0004  add r1,r2,r3
