@@ -13,12 +13,10 @@ def allocate_addresses(input_path, output_path, start_address=0x0000):
     for line in lines:
         stripped = line.strip()
 
-        # Blank line — preserve as-is
         if stripped == '':
             output_lines.append('')
             continue
 
-        # Label declaration — copy through unchanged, no address assigned
         if stripped.startswith('.'):
             output_lines.append(stripped)
             continue

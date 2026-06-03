@@ -9,14 +9,12 @@ address_allocator.allocate_addresses('assembly_input.txt', 'program.txt')
 with open('program.txt', 'r') as f:
     program = [line.rstrip('\n') for line in f.readlines()]
 
-# Build symbol table (catches duplicate labels)
 try:
     subroutine_map = label_address_parser.build_symbol_table(program)
 except AssemblerError as e:
     print(e, file=sys.stderr)
     sys.exit(1)
 
-# Track the 1-based instruction line number (skipping labels and blanks)
 instruction_line_number = 0
 
 with open('output.txt','w') as f:

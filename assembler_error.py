@@ -1,5 +1,4 @@
 class AssemblerError(Exception):
-    """Raised for any assembly-time error in the SimpleRISC encoder."""
 
     def __init__(self, message, line_number=None):
         self.message = message

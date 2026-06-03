@@ -27,9 +27,7 @@ opcode_map = {
     "ret":  "10100",
 }
 
-# Expected number of tokens (opcode + operands) for each instruction.
-# type-1 branches have 2 tokens: opcode + label
-# type-0 (ret, nop) have 1 token: opcode only
+
 _expected_token_counts = {
     "ret":  1, "nop":  1,
     "b":    2, "call": 2, "beq": 2, "bgt": 2,
@@ -60,9 +58,7 @@ def set_Imm_flag(instruction):
 
 
 def register_text_to_encoding(text):
-    """Convert a register token like 'r3' to a 4-bit binary string.
-    Raises AssemblerError if the register number is out of range (0-15).
-    """
+
     match = re.search(r'\d+', text)
     if match:
         number = int(match.group())
@@ -95,16 +91,14 @@ def to_2s_complement(value, bits):
 
 def parse_modifier(opcode_token):
     if opcode_token.endswith('hu'):
-        return opcode_token[:-2], '11'   # strip 'hu', modifier = 11
+        return opcode_token[:-2], '11'
     elif opcode_token.endswith('h'):
-        return opcode_token[:-1], '10'   # strip 'h', modifier = 10
+        return opcode_token[:-1], '10'
     elif opcode_token.endswith('u'):
-        return opcode_token[:-1], '01'   # strip 'u', modifier = 01
+        return opcode_token[:-1], '01'
     else:
         return opcode_token, '00'        # no modifier
-# ---------------------------------------------------------------------------
-# Operand-count guard
-# ---------------------------------------------------------------------------
+
 
 def _check_operand_count(instruction_tokens):
     raw_op = instruction_tokens[0].lower()
@@ -145,7 +139,6 @@ def encoding_type_1(instruction_tokens, current_location, subroutine_map):
     label_location = subroutine_map[label]
     offset = (int(label_location, 16) - int(current_location, 16)) // 4
 
-    # Jump offset too large for 27-bit signed field
     max_offset = (1 << 26) - 1   # 2^26 - 1
     min_offset = -(1 << 26)      # -2^26
     if not (min_offset <= offset <= max_offset):
